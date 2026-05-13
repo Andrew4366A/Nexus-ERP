@@ -150,10 +150,14 @@ function InventoryPage() {
             Track stock levels, value, and incoming shipments across warehouses.
           </p>
         </div>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          Add Item
-        </Button>
+        <AddInventorySheet
+          trigger={
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+              Add New Inventory
+            </Button>
+          }
+        />
       </header>
 
       {/* Top summary cards */}
