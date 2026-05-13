@@ -210,7 +210,7 @@ function PayrollPage() {
                     fontSize: 12,
                   }}
                 />
-                <Legend hidden />
+                
                 <Bar dataKey="net" stackId="a" fill="var(--primary)" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="tax" stackId="a" fill="oklch(0.769 0.188 70.08)" />
                 <Bar dataKey="loan" stackId="a" fill="oklch(0.6 0.118 184.704)" radius={[6, 6, 0, 0]} />
