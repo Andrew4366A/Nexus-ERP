@@ -271,10 +271,14 @@ function PayrollPage() {
                     <DropdownMenuItem onClick={() => { setSortKey("net"); setAsc(false); }}>Net (high → low)</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm">
-                  <Plus className="h-4 w-4" />
-                  Create salary definition
-                </Button>
+                <SalaryDefinitionSheet
+                  trigger={
+                    <Button size="sm">
+                      <Plus className="h-4 w-4" />
+                      Create salary definition
+                    </Button>
+                  }
+                />
               </div>
             </div>
 
