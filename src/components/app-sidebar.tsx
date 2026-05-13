@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Wallet, Truck } from "lucide-react";
+import { LayoutDashboard, Package, Wallet, Truck, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
