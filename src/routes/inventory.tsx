@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AddInventorySheet } from "@/components/add-inventory-sheet";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/inventory")({
