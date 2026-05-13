@@ -44,6 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SalaryDefinitionSheet } from "@/components/salary-definition-sheet";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/payroll")({
