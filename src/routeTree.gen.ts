@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as LogisticsRouteImport } from './routes/logistics'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PayrollRoute = PayrollRouteImport.update({
   id: '/payroll',
   path: '/payroll',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/inventory': typeof InventoryRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inventory' | '/logistics' | '/payroll'
+  fullPaths: '/' | '/inventory' | '/logistics' | '/payroll' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inventory' | '/logistics' | '/payroll'
-  id: '__root__' | '/' | '/inventory' | '/logistics' | '/payroll'
+  to: '/' | '/inventory' | '/logistics' | '/payroll' | '/settings'
+  id: '__root__' | '/' | '/inventory' | '/logistics' | '/payroll' | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LogisticsRoute: typeof LogisticsRoute
   PayrollRoute: typeof PayrollRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/payroll': {
       id: '/payroll'
       path: '/payroll'
@@ -107,7 +124,18 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LogisticsRoute: LogisticsRoute,
   PayrollRoute: PayrollRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
