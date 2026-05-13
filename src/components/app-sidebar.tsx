@@ -17,6 +17,7 @@ const items = [
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Payroll", url: "/payroll", icon: Wallet },
   { title: "Logistics", url: "/logistics", icon: Truck },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
