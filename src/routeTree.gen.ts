@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UserAccessRouteImport } from './routes/user-access'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as LogisticsRouteImport } from './routes/logistics'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as IndexRouteImport } from './routes/index'
 
+const UserAccessRoute = UserAccessRouteImport.update({
+  id: '/user-access',
+  path: '/user-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -36,6 +43,11 @@ const LogisticsRoute = LogisticsRouteImport.update({
   path: '/logistics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -50,60 +62,87 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/inventory': typeof InventoryRoute
+  '/login': typeof LoginRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/user-access': typeof UserAccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/inventory': typeof InventoryRoute
+  '/login': typeof LoginRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/user-access': typeof UserAccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/inventory': typeof InventoryRoute
+  '/login': typeof LoginRoute
   '/logistics': typeof LogisticsRoute
   '/payroll': typeof PayrollRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/user-access': typeof UserAccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/inventory'
+    | '/login'
     | '/logistics'
     | '/payroll'
     | '/settings'
     | '/staff'
+    | '/user-access'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inventory' | '/logistics' | '/payroll' | '/settings' | '/staff'
+  to:
+    | '/'
+    | '/inventory'
+    | '/login'
+    | '/logistics'
+    | '/payroll'
+    | '/settings'
+    | '/staff'
+    | '/user-access'
   id:
     | '__root__'
     | '/'
     | '/inventory'
+    | '/login'
     | '/logistics'
     | '/payroll'
     | '/settings'
     | '/staff'
+    | '/user-access'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InventoryRoute: typeof InventoryRoute
+  LoginRoute: typeof LoginRoute
   LogisticsRoute: typeof LogisticsRoute
   PayrollRoute: typeof PayrollRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
+  UserAccessRoute: typeof UserAccessRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/user-access': {
+      id: '/user-access'
+      path: '/user-access'
+      fullPath: '/user-access'
+      preLoaderRoute: typeof UserAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff': {
       id: '/staff'
       path: '/staff'
@@ -132,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogisticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory': {
       id: '/inventory'
       path: '/inventory'
@@ -152,11 +198,23 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InventoryRoute: InventoryRoute,
+  LoginRoute: LoginRoute,
   LogisticsRoute: LogisticsRoute,
   PayrollRoute: PayrollRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
+  UserAccessRoute: UserAccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

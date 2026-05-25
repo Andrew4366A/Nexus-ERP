@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { StepBody, StepIndicator } from "@/components/multi-step-sheet";
+import { API_BASE_URL, useAuth } from "@/lib/auth";
+import { inventoryListQueryKey } from "@/lib/inventory-query";
 
 const CATEGORIES = ["Electronics", "Furniture", "Lighting", "Accessories", "Stationery"] as const;
 
@@ -63,13 +66,26 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+export type AddedInventoryValues = Pick<
+  FormValues,
+  "name" | "sku" | "category" | "quantity" | "unitPrice"
+>;
+
 const STEPS = ["Product", "Stock & pricing"];
 const STEP_FIELDS: (keyof FormValues)[][] = [
   ["name", "sku", "category", "description"],
   ["quantity", "unitPrice"],
 ];
 
-export function AddInventorySheet({ trigger }: { trigger: ReactNode }) {
+export function AddInventorySheet({
+  trigger,
+  onItemAdded,
+}: {
+  trigger: ReactNode;
+  onItemAdded?: (values: AddedInventoryValues) => void;
+}) {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -96,12 +112,51 @@ export function AddInventorySheet({ trigger }: { trigger: ReactNode }) {
     if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
-  const onSubmit = (values: FormValues) => {
-    toast.success("Inventory item added", {
-      description: `${values.name} · ${values.sku}`,
-    });
-    setOpen(false);
-    reset();
+  const onSubmit = async (values: FormValues) => {
+    if (!token) {
+      toast.error("You must be signed in to add inventory.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/inventory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: values.name,
+          sku: values.sku,
+          category: values.category,
+          quantity: values.quantity,
+          unitPrice: values.unitPrice,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.message || "Could not add inventory item");
+      }
+
+      await queryClient.invalidateQueries({ queryKey: inventoryListQueryKey });
+      onItemAdded?.({
+        name: values.name,
+        sku: values.sku,
+        category: values.category,
+        quantity: values.quantity,
+        unitPrice: values.unitPrice,
+      });
+      toast.success("Inventory item added", {
+        description: `${values.name} · ${values.sku}`,
+      });
+      setOpen(false);
+      reset();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not add inventory item";
+      toast.error(message);
+    }
   };
 
   return (

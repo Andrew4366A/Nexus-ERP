@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { toast } from "sonner";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -25,6 +17,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -45,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalaryDefinitionSheet } from "@/components/salary-definition-sheet";
+import { usePermissions } from "@/lib/usePermissions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/payroll")({
@@ -99,34 +102,118 @@ interface Row {
   net: number;
 }
 
-const ROWS: Row[] = [
-  { id: 1, title: "Operations Lead", level: "L5", basic: 5200, allowance: 1100, gross: 6300, deductions: 980, net: 5320 },
-  { id: 2, title: "Warehouse Manager", level: "L4", basic: 4400, allowance: 900, gross: 5300, deductions: 820, net: 4480 },
-  { id: 3, title: "Logistics Analyst", level: "L3", basic: 3600, allowance: 700, gross: 4300, deductions: 640, net: 3660 },
-  { id: 4, title: "Inventory Officer", level: "L3", basic: 3400, allowance: 650, gross: 4050, deductions: 600, net: 3450 },
-  { id: 5, title: "Procurement Specialist", level: "L4", basic: 4200, allowance: 850, gross: 5050, deductions: 770, net: 4280 },
-  { id: 6, title: "Fleet Coordinator", level: "L3", basic: 3500, allowance: 680, gross: 4180, deductions: 620, net: 3560 },
-  { id: 7, title: "HR Business Partner", level: "L4", basic: 4300, allowance: 880, gross: 5180, deductions: 790, net: 4390 },
-  { id: 8, title: "Finance Controller", level: "L5", basic: 5400, allowance: 1150, gross: 6550, deductions: 1010, net: 5540 },
+const SEED_SALARY_ROWS: Row[] = [
+  {
+    id: 1,
+    title: "Operations Lead",
+    level: "L5",
+    basic: 5200,
+    allowance: 1100,
+    gross: 6300,
+    deductions: 980,
+    net: 5320,
+  },
+  {
+    id: 2,
+    title: "Warehouse Manager",
+    level: "L4",
+    basic: 4400,
+    allowance: 900,
+    gross: 5300,
+    deductions: 820,
+    net: 4480,
+  },
+  {
+    id: 3,
+    title: "Logistics Analyst",
+    level: "L3",
+    basic: 3600,
+    allowance: 700,
+    gross: 4300,
+    deductions: 640,
+    net: 3660,
+  },
+  {
+    id: 4,
+    title: "Inventory Officer",
+    level: "L3",
+    basic: 3400,
+    allowance: 650,
+    gross: 4050,
+    deductions: 600,
+    net: 3450,
+  },
+  {
+    id: 5,
+    title: "Procurement Specialist",
+    level: "L4",
+    basic: 4200,
+    allowance: 850,
+    gross: 5050,
+    deductions: 770,
+    net: 4280,
+  },
+  {
+    id: 6,
+    title: "Fleet Coordinator",
+    level: "L3",
+    basic: 3500,
+    allowance: 680,
+    gross: 4180,
+    deductions: 620,
+    net: 3560,
+  },
+  {
+    id: 7,
+    title: "HR Business Partner",
+    level: "L4",
+    basic: 4300,
+    allowance: 880,
+    gross: 5180,
+    deductions: 790,
+    net: 4390,
+  },
+  {
+    id: 8,
+    title: "Finance Controller",
+    level: "L5",
+    basic: 5400,
+    allowance: 1150,
+    gross: 6550,
+    deductions: 1010,
+    net: 5540,
+  },
 ];
 
 type SortKey = "title" | "level" | "net" | "gross";
 
 function PayrollPage() {
+  const { can } = usePermissions();
+  const [salaryRows, setSalaryRows] = useState<Row[]>(SEED_SALARY_ROWS);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [asc, setAsc] = useState(true);
 
+  const canCreatePayroll = can("Payroll", "create");
+  const canEditPayroll = can("Payroll", "edit");
+  const canDeletePayroll = can("Payroll", "delete");
+
   const rows = useMemo(() => {
-    const sorted = [...ROWS].sort((a, b) => {
+    const sorted = [...salaryRows].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
       if (typeof av === "number" && typeof bv === "number") return asc ? av - bv : bv - av;
-      return asc
-        ? String(av).localeCompare(String(bv))
-        : String(bv).localeCompare(String(av));
+      return asc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
     });
     return sorted;
-  }, [sortKey, asc]);
+  }, [salaryRows, sortKey, asc]);
+
+  const confirmDeleteSalaryRow = () => {
+    if (!deleteTarget) return;
+    setSalaryRows((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+    toast.success("Salary definition removed", { description: deleteTarget.title });
+    setDeleteTarget(null);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -146,10 +233,7 @@ function PayrollPage() {
             const positive = s.delta >= 0;
             const Icon = s.icon;
             return (
-              <Card
-                key={s.label}
-                className="p-5 shadow-[var(--shadow-card)] border-border/60"
-              >
+              <Card key={s.label} className="p-5 shadow-[var(--shadow-card)] border-border/60">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
@@ -211,10 +295,15 @@ function PayrollPage() {
                     fontSize: 12,
                   }}
                 />
-                
+
                 <Bar dataKey="net" stackId="a" fill="var(--primary)" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="tax" stackId="a" fill="oklch(0.769 0.188 70.08)" />
-                <Bar dataKey="loan" stackId="a" fill="oklch(0.6 0.118 184.704)" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="loan"
+                  stackId="a"
+                  fill="oklch(0.6 0.118 184.704)"
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -265,20 +354,67 @@ function PayrollPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => { setSortKey("title"); setAsc(true); }}>Title (A–Z)</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setSortKey("level"); setAsc(true); }}>Level</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setSortKey("gross"); setAsc(false); }}>Gross (high → low)</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setSortKey("net"); setAsc(false); }}>Net (high → low)</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSortKey("title");
+                        setAsc(true);
+                      }}
+                    >
+                      Title (A–Z)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSortKey("level");
+                        setAsc(true);
+                      }}
+                    >
+                      Level
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSortKey("gross");
+                        setAsc(false);
+                      }}
+                    >
+                      Gross (high → low)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSortKey("net");
+                        setAsc(false);
+                      }}
+                    >
+                      Net (high → low)
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <SalaryDefinitionSheet
-                  trigger={
-                    <Button size="sm">
-                      <Plus className="h-4 w-4" />
-                      Create salary definition
-                    </Button>
-                  }
-                />
+                {canCreatePayroll && (
+                  <SalaryDefinitionSheet
+                    onDefinitionCreated={(v) => {
+                      const gross = v.basic + v.allowance;
+                      const net = gross - v.deductions;
+                      setSalaryRows((prev) => [
+                        {
+                          id: Date.now(),
+                          title: v.title,
+                          level: v.level,
+                          basic: v.basic,
+                          allowance: v.allowance,
+                          gross,
+                          deductions: v.deductions,
+                          net,
+                        },
+                        ...prev,
+                      ]);
+                    }}
+                    trigger={
+                      <Button size="sm">
+                        <Plus className="h-4 w-4" />
+                        Create salary definition
+                      </Button>
+                    }
+                  />
+                )}
               </div>
             </div>
 
@@ -308,24 +444,51 @@ function PayrollPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{currency(r.basic)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{currency(r.allowance)}</TableCell>
-                      <TableCell className="text-right tabular-nums font-medium">{currency(r.gross)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {currency(r.allowance)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-medium">
+                        {currency(r.gross)}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums text-rose-600">
                         −{currency(r.deductions)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">{currency(r.net)}</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {currency(r.net)}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:text-rose-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canEditPayroll && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDeletePayroll && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-rose-600 hover:text-rose-600"
+                              onClick={() => setDeleteTarget(r)}
+                              aria-label={`Delete ${r.title}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {rows.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={9}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
+                        No salary definitions yet. Create one to get started.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -348,6 +511,36 @@ function PayrollPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove salary definition?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? (
+                <>
+                  This removes{" "}
+                  <span className="font-medium text-foreground">{deleteTarget.title}</span> (
+                  {deleteTarget.level}) from this list. This does not affect historical payroll
+                  runs.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeleteSalaryRow}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

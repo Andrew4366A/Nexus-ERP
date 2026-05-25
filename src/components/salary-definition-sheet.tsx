@@ -56,13 +56,24 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+export type SalaryDefinitionFormValues = Pick<
+  FormValues,
+  "title" | "level" | "basic" | "allowance" | "deductions"
+>;
+
 const STEPS = ["Role", "Compensation"];
 const STEP_FIELDS: (keyof FormValues)[][] = [
   ["title", "level"],
   ["basic", "allowance", "deductions"],
 ];
 
-export function SalaryDefinitionSheet({ trigger }: { trigger: ReactNode }) {
+export function SalaryDefinitionSheet({
+  trigger,
+  onDefinitionCreated,
+}: {
+  trigger: ReactNode;
+  onDefinitionCreated?: (values: SalaryDefinitionFormValues) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -89,6 +100,13 @@ export function SalaryDefinitionSheet({ trigger }: { trigger: ReactNode }) {
   };
 
   const onSubmit = (values: FormValues) => {
+    onDefinitionCreated?.({
+      title: values.title,
+      level: values.level,
+      basic: values.basic,
+      allowance: values.allowance,
+      deductions: values.deductions,
+    });
     toast.success("Salary definition created", {
       description: `${values.title} (${values.level})`,
     });

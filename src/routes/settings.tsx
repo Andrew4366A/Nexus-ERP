@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useUserProfile, type UserProfile } from "@/lib/user-profile";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -23,26 +22,34 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
+  const { profile, resetProfileDraft, updateProfile } = useUserProfile();
+  const [profileForm, setProfileForm] = useState<UserProfile>(profile);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
   const [stockAlerts, setStockAlerts] = useState(true);
   const [payrollReminders, setPayrollReminders] = useState(true);
 
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border/60 bg-background/80 px-6 backdrop-blur">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-base font-semibold tracking-tight">Settings</h1>
-            <p className="text-xs text-muted-foreground">
-              Manage your account and workspace preferences
-            </p>
-          </div>
-        </header>
+  const updateProfileField = (field: keyof UserProfile, value: string) => {
+    setProfileForm((current) => ({ ...current, [field]: value }));
+  };
 
-        <main className="flex-1 p-6">
+  const handleSaveProfile = () => {
+    updateProfile(profileForm);
+  };
+
+  const handleCancelProfile = () => {
+    setProfileForm(resetProfileDraft());
+  };
+
+  return (
+    <div className="flex-1 p-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your account and workspace preferences
+        </p>
+      </header>
+
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList>
               <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -62,21 +69,31 @@ function SettingsPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full name</Label>
-                      <Input id="name" defaultValue="Alex Morgan" placeholder="Your name" />
+                      <Input
+                        id="name"
+                        value={profileForm.name}
+                        placeholder="Your name"
+                        onChange={(event) => updateProfileField("name", event.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
-                        defaultValue="alex@nexuserp.com"
+                        value={profileForm.email}
                         placeholder="you@company.com"
+                        onChange={(event) => updateProfileField("email", event.target.value)}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Input id="role" defaultValue="Operations Manager" />
+                    <Input
+                      id="role"
+                      value={profileForm.role}
+                      onChange={(event) => updateProfileField("role", event.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
@@ -84,13 +101,18 @@ function SettingsPage() {
                       id="bio"
                       rows={3}
                       placeholder="A short description about you"
-                      defaultValue="Leading operations across logistics and warehousing."
+                      value={profileForm.bio}
+                      onChange={(event) => updateProfileField("bio", event.target.value)}
                     />
                   </div>
                   <Separator />
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline">Cancel</Button>
-                    <Button>Save changes</Button>
+                    <Button type="button" variant="outline" onClick={handleCancelProfile}>
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={handleSaveProfile}>
+                      Save changes
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -168,9 +190,7 @@ function SettingsPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    </div>
   );
 }
 
