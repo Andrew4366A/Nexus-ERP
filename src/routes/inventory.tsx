@@ -176,13 +176,7 @@ function InventoryPage() {
     const totalValue = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
     const lowStock = items.filter((i) => i.quantity < 10).length;
     return [
-      {
-        label: "Total Stock Value",
-        value: currency(totalValue),
-        helper: `${items.length} SKU${items.length === 1 ? "" : "s"} in catalogue`,
-        icon: Wallet,
-        tone: "primary",
-      },
+      
       {
         label: "Low Stock Items",
         value: String(lowStock),
