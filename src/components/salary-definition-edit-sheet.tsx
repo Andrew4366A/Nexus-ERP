@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,6 +30,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { StepBody, StepIndicator } from "@/components/multi-step-sheet";
+import { API_BASE_URL, useAuth } from "@/lib/auth";
 
 const schema = z.object({
   title: z.string().trim().min(1, "Title is required").max(80, "Title must be under 80 characters"),
@@ -52,7 +53,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export type SalaryDefinitionFormValues = Pick<
+export type SalaryDefinitionEditValues = Pick<
   FormValues,
   "title" | "level" | "basic" | "allowance" | "deductions"
 >;
@@ -63,31 +64,66 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
   ["basic", "allowance", "deductions"],
 ];
 
-export function SalaryDefinitionSheet({
+export function SalaryDefinitionEditSheet({
   trigger,
-  onDefinitionCreated,
+  definition,
+  method = "patch",
+  onUpdated,
 }: {
   trigger: ReactNode;
-  onDefinitionCreated?: (values: SalaryDefinitionFormValues) => void;
+  definition: (SalaryDefinitionEditValues & { id: string }) | null;
+  method?: "patch" | "put";
+  onUpdated?: (next: SalaryDefinitionEditValues & { id: string }) => void;
 }) {
+  const { token } = useAuth();
+
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  const defaultValues = useMemo(() => {
+    if (!definition) {
+      return {
+        title: "",
+        level: undefined as unknown as FormValues["level"],
+        basic: undefined as unknown as number,
+        allowance: 0,
+        deductions: 0,
+      };
+    }
+
+    return {
+      title: definition.title,
+      level: definition.level,
+      basic: definition.basic,
+      allowance: definition.allowance,
+      deductions: definition.deductions,
+    };
+  }, [definition]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onTouched",
-    defaultValues: {
-      title: "",
-      level: undefined as unknown as FormValues["level"],
-      basic: undefined as unknown as number,
-      allowance: 0,
-      deductions: 0,
-    },
+    defaultValues,
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (!definition) return;
+    form.reset({
+      title: definition.title,
+      level: definition.level,
+      basic: definition.basic,
+      allowance: definition.allowance,
+      deductions: definition.deductions,
+    });
+    setStep(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, definition?.id]);
 
   const reset = () => {
     setStep(0);
-    form.reset();
+    form.reset(defaultValues);
   };
 
   const handleNext = async () => {
@@ -95,19 +131,55 @@ export function SalaryDefinitionSheet({
     if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
-  const onSubmit = (values: FormValues) => {
-    onDefinitionCreated?.({
-      title: values.title,
-      level: values.level,
-      basic: values.basic,
-      allowance: values.allowance,
-      deductions: values.deductions,
-    });
-    toast.success("Salary definition created", {
-      description: `${values.title} (${values.level})`,
-    });
-    setOpen(false);
-    reset();
+  const onSubmit = async (values: FormValues) => {
+    if (!token || !definition) {
+      toast.error("You must be signed in to edit salary definition.");
+      return;
+    }
+
+    const id = definition.id;
+    setSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payroll/salary-definitions/${id}`, {
+        method: method === "put" ? "PUT" : "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: values.title,
+          level: values.level,
+          basic: values.basic,
+          allowance: values.allowance,
+          deductions: values.deductions,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.message || "Unable to update salary definition");
+      }
+
+      const updated = payload?.salaryDefinition;
+      const next = {
+        id,
+        title: updated?.title ?? values.title,
+        level: updated?.level ?? values.level,
+        basic: updated?.basic ?? values.basic,
+        allowance: updated?.allowance ?? values.allowance,
+        deductions: updated?.deductions ?? values.deductions,
+      };
+
+      onUpdated?.(next);
+      toast.success("Salary definition updated", { description: `${next.title} (${next.level})` });
+      setOpen(false);
+      reset();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to update salary definition";
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -121,8 +193,10 @@ export function SalaryDefinitionSheet({
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent className="w-full sm:max-w-md flex flex-col gap-0 p-0">
         <SheetHeader className="border-b p-6">
-          <SheetTitle>Create salary definition</SheetTitle>
-          <SheetDescription>Define a new role with its compensation structure.</SheetDescription>
+          <SheetTitle>Edit salary definition</SheetTitle>
+          <SheetDescription>
+            Update the salary structure values for this definition.
+          </SheetDescription>
           <div className="pt-4">
             <StepIndicator steps={STEPS} current={step} />
           </div>
@@ -199,6 +273,7 @@ export function SalaryDefinitionSheet({
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="allowance"
@@ -206,12 +281,19 @@ export function SalaryDefinitionSheet({
                       <FormItem>
                         <FormLabel>Allowance (USD)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" min={0} {...field} />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="deductions"
@@ -219,7 +301,13 @@ export function SalaryDefinitionSheet({
                       <FormItem>
                         <FormLabel>Deductions (USD)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" min={0} {...field} />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -234,17 +322,18 @@ export function SalaryDefinitionSheet({
                 type="button"
                 variant="ghost"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
-                disabled={step === 0}
+                disabled={step === 0 || saving}
               >
                 Back
               </Button>
+
               {step < STEPS.length - 1 ? (
-                <Button type="button" onClick={handleNext}>
+                <Button type="button" onClick={handleNext} disabled={saving}>
                   Next
                 </Button>
               ) : (
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  Create definition
+                <Button type="submit" disabled={saving || !definition}>
+                  Save changes
                 </Button>
               )}
             </div>

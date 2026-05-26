@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalaryDefinitionSheet } from "@/components/salary-definition-sheet";
+import { SalaryDefinitionEditSheet } from "@/components/salary-definition-edit-sheet";
+
 import { usePermissions } from "@/lib/usePermissions";
 import { cn } from "@/lib/utils";
 
@@ -92,9 +94,12 @@ const CHART_DATA = [
 ];
 
 interface Row {
+  /** Local UI row id (S/N) */
   id: number;
+  /** Mongo id for persisted SalaryDefinition; undefined for seed rows */
+  mongoId?: string;
   title: string;
-  level: string;
+  level: "L1" | "L2" | "L3" | "L4" | "L5";
   basic: number;
   allowance: number;
   gross: number;
@@ -191,6 +196,8 @@ function PayrollPage() {
   const { can } = usePermissions();
   const [salaryRows, setSalaryRows] = useState<Row[]>(SEED_SALARY_ROWS);
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [editTarget, setEditTarget] = useState<Row | null>(null);
+
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [asc, setAsc] = useState(true);
 
@@ -459,10 +466,60 @@ function PayrollPage() {
                       <TableCell className="text-right">
                         <div className="inline-flex items-center gap-1">
                           {canEditPayroll && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <SalaryDefinitionEditSheet
+                              trigger={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  type="button"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              }
+                              definition={
+                                editTarget?.id === r.id
+                                  ? {
+                                      id: editTarget?.mongoId ?? "" + r.id,
+
+                                      title: r.title,
+                                      level: r.level,
+                                      basic: r.basic,
+                                      allowance: r.allowance,
+                                      deductions: r.deductions,
+                                    }
+                                  : {
+                                      id: r.mongoId ?? "" + r.id,
+                                      title: r.title,
+
+                                      level: r.level,
+                                      basic: r.basic,
+                                      allowance: r.allowance,
+                                      deductions: r.deductions,
+                                    }
+                              }
+                              onUpdated={(next) => {
+                                setSalaryRows((prev) =>
+                                  prev.map((row) =>
+                                    row.id === r.id
+                                      ? {
+                                          ...row,
+                                          title: next.title,
+                                          level: next.level,
+                                          basic: next.basic,
+                                          allowance: next.allowance,
+                                          deductions: next.deductions,
+                                          gross: next.basic + next.allowance,
+                                          net: next.basic + next.allowance - next.deductions,
+                                        }
+                                      : row,
+                                  ),
+                                );
+                                setEditTarget(null);
+                              }}
+                            />
                           )}
+
                           {canDeletePayroll && (
                             <Button
                               type="button"
