@@ -1,13 +1,7 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function StepIndicator({
-  steps,
-  current,
-}: {
-  steps: string[];
-  current: number;
-}) {
+export function StepIndicator({ steps, current }: { steps: string[]; current: number }) {
   return (
     <ol className="flex items-center gap-2">
       {steps.map((label, i) => {
@@ -33,9 +27,7 @@ export function StepIndicator({
             >
               {label}
             </span>
-            {i < steps.length - 1 && (
-              <div className="mx-1 h-px flex-1 bg-border" />
-            )}
+            {i < steps.length - 1 && <div className="mx-1 h-px flex-1 bg-border" />}
           </li>
         );
       })}

@@ -8,7 +8,8 @@ export function usePermissions() {
   const { user, isAdmin } = useAuth();
 
   const can = useMemo(
-    () => (module: string, action: ActionType) => hasModulePermission(user, isAdmin, module, action),
+    () => (module: string, action: ActionType) =>
+      hasModulePermission(user, isAdmin, module, action),
     [user, isAdmin],
   );
 

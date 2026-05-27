@@ -124,13 +124,13 @@ export async function deleteInventoryItem(req, res, next) {
           id: item._id,
           module: "inventory",
         },
-      inventory: {
-         name: item.name,
-         sku: item.sku,
-         category: item.category,
-         quantity: item.quantity,
-         unitPrice: item.unitPrice,
-       },
+        inventory: {
+          name: item.name,
+          sku: item.sku,
+          category: item.category,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        },
       });
     }
 

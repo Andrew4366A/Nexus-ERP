@@ -102,8 +102,7 @@ function UserAccessPage() {
     refetch: refetchRoles,
   } = useRoles(token);
 
-  const canViewPage =
-    isAdmin || hasModulePermission(currentUser, isAdmin, "User Access", "read");
+  const canViewPage = isAdmin || hasModulePermission(currentUser, isAdmin, "User Access", "read");
 
   const [users, setUsers] = useState<ListedUser[]>([]);
   const [query, setQuery] = useState("");
@@ -180,7 +179,7 @@ function UserAccessPage() {
 
   const selectedRoleMaster = useMemo(
     () =>
-      isCreatingRole ? null : roles.find((role) => role._id === selectedRoleMasterId) ?? null,
+      isCreatingRole ? null : (roles.find((role) => role._id === selectedRoleMasterId) ?? null),
     [roles, selectedRoleMasterId, isCreatingRole],
   );
 
@@ -323,7 +322,9 @@ function UserAccessPage() {
         state={addForm}
         roles={roles}
         rolesLoading={rolesLoading}
-        rolesError={rolesError ? (rolesQueryError as Error)?.message ?? "Failed to load roles" : null}
+        rolesError={
+          rolesError ? ((rolesQueryError as Error)?.message ?? "Failed to load roles") : null
+        }
         creating={creating}
         onChange={(patch) => setAddForm((prev) => ({ ...prev, ...patch }))}
         onToggleModule={(id) =>
@@ -349,7 +350,9 @@ function UserAccessPage() {
             }}
             roles={roles}
             loading={rolesLoading}
-            error={rolesError ? (rolesQueryError as Error)?.message ?? "Failed to load roles" : null}
+            error={
+              rolesError ? ((rolesQueryError as Error)?.message ?? "Failed to load roles") : null
+            }
             includeLegacy={false}
             disabled={isCreatingRole}
           />

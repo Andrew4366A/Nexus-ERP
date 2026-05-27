@@ -120,11 +120,20 @@ export function ManageUserPanel({
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-email">Email</Label>
-            <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="edit-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-username">Username</Label>
-            <Input id="edit-username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <Input
+              id="edit-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </div>
           <div className="flex flex-wrap gap-2">
             <Button

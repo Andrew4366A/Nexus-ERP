@@ -73,7 +73,9 @@ function normalizeSectionList(values: string[] | undefined): SidebarSectionId[] 
 }
 
 /** Legacy admins and Administrator roles see every workspace tab. */
-export function userHasFullSidebarAccess(user: Pick<AuthUser, "role" | "roleName"> | null | undefined): boolean {
+export function userHasFullSidebarAccess(
+  user: Pick<AuthUser, "role" | "roleName"> | null | undefined,
+): boolean {
   if (!user) return false;
   if (user.role === "admin") return true;
   return user.roleName?.trim().toLowerCase() === "administrator";
@@ -94,7 +96,10 @@ export function normalizeUserSections(user: AuthUser | null | undefined): Sideba
   return ["inventory"];
 }
 
-export function canAccessUserAccessRoute(user: AuthUser | null | undefined, isAdmin: boolean): boolean {
+export function canAccessUserAccessRoute(
+  user: AuthUser | null | undefined,
+  isAdmin: boolean,
+): boolean {
   if (isAdmin || userHasFullSidebarAccess(user ?? null)) return true;
   return false;
 }

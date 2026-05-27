@@ -176,7 +176,6 @@ function InventoryPage() {
     const totalValue = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
     const lowStock = items.filter((i) => i.quantity < 10).length;
     return [
-      
       {
         label: "Low Stock Items",
         value: String(lowStock),
@@ -241,7 +240,6 @@ function InventoryPage() {
         )}
       </header>
 
-      #Summary cards
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {summaryCards.map((s) => {
           const Icon = s.icon;

@@ -38,11 +38,7 @@ import { inventoryListQueryKey } from "@/lib/inventory-query";
 const CATEGORIES = ["Electronics", "Furniture", "Lighting", "Accessories", "Stationery"] as const;
 
 const schema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Name is required")
-    .max(100, "Name must be under 100 characters"),
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be under 100 characters"),
   sku: z
     .string()
     .trim()
@@ -171,9 +167,7 @@ export function AddInventorySheet({
       <SheetContent className="w-full sm:max-w-md flex flex-col gap-0 p-0">
         <SheetHeader className="border-b p-6">
           <SheetTitle>Add new inventory</SheetTitle>
-          <SheetDescription>
-            Register a new product into your stock catalogue.
-          </SheetDescription>
+          <SheetDescription>Register a new product into your stock catalogue.</SheetDescription>
           <div className="pt-4">
             <StepIndicator steps={STEPS} current={step} />
           </div>
@@ -194,7 +188,11 @@ export function AddInventorySheet({
                       <FormItem>
                         <FormLabel>Product name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Aurora Wireless Headset" maxLength={100} {...field} />
+                          <Input
+                            placeholder="e.g. Aurora Wireless Headset"
+                            maxLength={100}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

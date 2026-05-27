@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -51,6 +51,7 @@ import { SalaryDefinitionEditSheet } from "@/components/salary-definition-edit-s
 
 import { usePermissions } from "@/lib/usePermissions";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/payroll")({
   component: PayrollPage,
@@ -94,9 +95,10 @@ const CHART_DATA = [
 ];
 
 interface Row {
-  /** Local UI row id (S/N) */
-  id: number;
-  /** Mongo id for persisted SalaryDefinition; undefined for seed rows */
+  /** Mongo id for persisted SalaryDefinition */
+  id: string;
+
+  /** Convenience copy of `_id` */
   mongoId?: string;
   title: string;
   level: "L1" | "L2" | "L3" | "L4" | "L5";
@@ -109,7 +111,8 @@ interface Row {
 
 const SEED_SALARY_ROWS: Row[] = [
   {
-    id: 1,
+    id: "1",
+
     title: "Operations Lead",
     level: "L5",
     basic: 5200,
@@ -119,7 +122,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 5320,
   },
   {
-    id: 2,
+    id: "2",
+
     title: "Warehouse Manager",
     level: "L4",
     basic: 4400,
@@ -129,7 +133,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 4480,
   },
   {
-    id: 3,
+    id: "3",
+
     title: "Logistics Analyst",
     level: "L3",
     basic: 3600,
@@ -139,7 +144,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 3660,
   },
   {
-    id: 4,
+    id: "4",
+
     title: "Inventory Officer",
     level: "L3",
     basic: 3400,
@@ -149,7 +155,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 3450,
   },
   {
-    id: 5,
+    id: "5",
+
     title: "Procurement Specialist",
     level: "L4",
     basic: 4200,
@@ -159,7 +166,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 4280,
   },
   {
-    id: 6,
+    id: "6",
+
     title: "Fleet Coordinator",
     level: "L3",
     basic: 3500,
@@ -169,7 +177,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 3560,
   },
   {
-    id: 7,
+    id: "7",
+
     title: "HR Business Partner",
     level: "L4",
     basic: 4300,
@@ -179,7 +188,8 @@ const SEED_SALARY_ROWS: Row[] = [
     net: 4390,
   },
   {
-    id: 8,
+    id: "8",
+
     title: "Finance Controller",
     level: "L5",
     basic: 5400,
@@ -194,9 +204,19 @@ type SortKey = "title" | "level" | "net" | "gross";
 
 function PayrollPage() {
   const { can } = usePermissions();
-  const [salaryRows, setSalaryRows] = useState<Row[]>(SEED_SALARY_ROWS);
+  const [salaryRows, setSalaryRows] = useState<Row[]>([]);
+  const [loadingSalaryRows, setLoadingSalaryRows] = useState(false);
+
+  // Use the shared API base URL from auth module (matches the rest of the app)
+  const { token } = useAuth();
+  const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
   const [editTarget, setEditTarget] = useState<Row | null>(null);
+
+  const setEditTargetFromRow = (row: Row) => {
+    setEditTarget(row);
+  };
 
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [asc, setAsc] = useState(true);
@@ -215,11 +235,92 @@ function PayrollPage() {
     return sorted;
   }, [salaryRows, sortKey, asc]);
 
-  const confirmDeleteSalaryRow = () => {
-    if (!deleteTarget) return;
-    setSalaryRows((prev) => prev.filter((r) => r.id !== deleteTarget.id));
-    toast.success("Salary definition removed", { description: deleteTarget.title });
-    setDeleteTarget(null);
+  const fetchSalaryDefinitions = async () => {
+    try {
+      setLoadingSalaryRows(true);
+      const res = await fetch(`${API_BASE_URL}/api/payroll/salary-definitions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      const definitions = (data?.salaryDefinitions ?? []) as Array<{
+        _id?: string;
+        title?: string;
+        level?: string;
+        basic?: number;
+        allowance?: number;
+        deductions?: number;
+        net?: number;
+      }>;
+
+      const mapped: Row[] = definitions
+        .map((d): Row => {
+          const basic = d.basic ?? 0;
+          const allowance = d.allowance ?? 0;
+          const deductions = d.deductions ?? 0;
+          const gross = basic + allowance;
+          const net = gross - deductions;
+
+          return {
+            // Use mongo id as table key/id (option A)
+            id: d._id ?? "",
+            mongoId: d._id,
+            title: d.title ?? "Untitled",
+            level: (d.level as Row["level"] | undefined) ?? "L3",
+            basic,
+            allowance,
+            gross,
+            deductions,
+            net,
+          };
+        })
+        .filter((r) => r.id !== "");
+
+      setSalaryRows(mapped);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error("Failed to load salary definitions", {
+        description: message,
+      });
+      setSalaryRows([]);
+    } finally {
+      setLoadingSalaryRows(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSalaryDefinitions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const confirmDeleteSalaryRow = async () => {
+    if (!deleteTarget?.mongoId) return;
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/payroll/salary-definitions/${deleteTarget.mongoId}`,
+        {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          credentials: "include",
+        },
+      );
+
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Salary definition removed", {
+        description: deleteTarget.title,
+      });
+      setDeleteTarget(null);
+      await fetchSalaryDefinitions();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error("Failed to delete salary definition", {
+        description: message,
+      });
+    }
   };
 
   return (
@@ -234,6 +335,9 @@ function PayrollPage() {
       </header>
 
       {/* Top section: summary cards + chart */}
+      {loadingSalaryRows && (
+        <div className="text-sm text-muted-foreground">Loading salary definitions...</div>
+      )}
       <section className="grid gap-4 xl:grid-cols-3">
         <div className="grid gap-4 sm:grid-cols-2 xl:col-span-1">
           {SUMMARY.map((s) => {
@@ -397,22 +501,31 @@ function PayrollPage() {
                 </DropdownMenu>
                 {canCreatePayroll && (
                   <SalaryDefinitionSheet
-                    onDefinitionCreated={(v) => {
-                      const gross = v.basic + v.allowance;
-                      const net = gross - v.deductions;
-                      setSalaryRows((prev) => [
-                        {
-                          id: Date.now(),
-                          title: v.title,
-                          level: v.level,
-                          basic: v.basic,
-                          allowance: v.allowance,
-                          gross,
-                          deductions: v.deductions,
-                          net,
-                        },
-                        ...prev,
-                      ]);
+                    onDefinitionCreated={async (v) => {
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/api/payroll/salary-definitions`, {
+                          method: "POST",
+                          credentials: "include",
+                          headers: {
+                            "Content-Type": "application/json",
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                          },
+                          body: JSON.stringify(v),
+                        });
+
+                        if (!res.ok) throw new Error(await res.text());
+
+                        toast.success("Salary definition created", {
+                          description: `${v.title} (${v.level})`,
+                        });
+
+                        await fetchSalaryDefinitions();
+                      } catch (e) {
+                        const message = e instanceof Error ? e.message : "Unknown error";
+                        toast.error("Failed to create salary definition", {
+                          description: message,
+                        });
+                      }
                     }}
                     trigger={
                       <Button size="sm">
@@ -480,8 +593,7 @@ function PayrollPage() {
                               definition={
                                 editTarget?.id === r.id
                                   ? {
-                                      id: editTarget?.mongoId ?? "" + r.id,
-
+                                      id: editTarget?.mongoId ?? r.id,
                                       title: r.title,
                                       level: r.level,
                                       basic: r.basic,
@@ -489,9 +601,8 @@ function PayrollPage() {
                                       deductions: r.deductions,
                                     }
                                   : {
-                                      id: r.mongoId ?? "" + r.id,
+                                      id: r.mongoId ?? r.id,
                                       title: r.title,
-
                                       level: r.level,
                                       basic: r.basic,
                                       allowance: r.allowance,

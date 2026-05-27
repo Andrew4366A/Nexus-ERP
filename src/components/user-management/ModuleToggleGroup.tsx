@@ -28,8 +28,7 @@ export function ModuleToggleGroup({
   disabled = false,
   layout = "row",
 }: ModuleToggleGroupProps) {
-  const wrapperClass =
-    layout === "row" ? "flex flex-wrap gap-2" : "mt-4 space-y-3";
+  const wrapperClass = layout === "row" ? "flex flex-wrap gap-2" : "mt-4 space-y-3";
 
   return (
     <div className={wrapperClass}>

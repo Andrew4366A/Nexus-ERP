@@ -181,21 +181,14 @@ function AppFrame() {
       return;
     }
 
-    if (
-      !isAuthenticated ||
-      isLoginRoute ||
-      isAdmin ||
-      !user ||
-      user.role !== "user"
-    ) {
+    if (!isAuthenticated || isLoginRoute || isAdmin || !user || user.role !== "user") {
       return;
     }
 
     const allowed = normalizeUserSections(user);
 
     if (pathname === ADMIN_ONLY_PATH) {
-      const canManageUsers =
-        isAdmin || hasModulePermission(user, isAdmin, "User Access", "read");
+      const canManageUsers = isAdmin || hasModulePermission(user, isAdmin, "User Access", "read");
       if (!canManageUsers) {
         router.navigate({ to: getFirstAllowedUserPath(allowed) });
       }

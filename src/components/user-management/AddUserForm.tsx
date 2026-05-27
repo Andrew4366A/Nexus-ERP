@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ModuleToggleGroup, PermissionPreview } from "@/components/user-management/ModuleToggleGroup";
+import {
+  ModuleToggleGroup,
+  PermissionPreview,
+} from "@/components/user-management/ModuleToggleGroup";
 import { RoleSelect } from "@/components/user-management/RoleSelect";
 import type { CustomRole } from "@/lib/rbac-types";
-import {
-  isWorkspaceRoleSelection,
-  sectionsFromRole,
-} from "@/lib/rbac-utils";
+import { isWorkspaceRoleSelection, sectionsFromRole } from "@/lib/rbac-utils";
 import { SECTION_LABEL, type SidebarSectionId } from "@/lib/sidebar-access";
 
 export interface AddUserFormState {

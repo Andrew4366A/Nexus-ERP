@@ -32,4 +32,6 @@ export type LegacyAccountRole = "admin" | "user";
 
 export type RoleSelection = string;
 
-export type RoleBasedActionsMap = Partial<Record<SidebarSectionId, Partial<Record<ActionType, boolean>>>>;
+export type RoleBasedActionsMap = Partial<
+  Record<SidebarSectionId, Partial<Record<ActionType, boolean>>>
+>;

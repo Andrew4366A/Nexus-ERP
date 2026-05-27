@@ -148,8 +148,8 @@ function InventoryCreatedPopup({
                       <span className="truncate">{actorName}</span>
                     </div>
                     <p className="mt-2 text-sm leading-5 text-slate-600">
-                      <span className="font-semibold text-slate-950">{itemName}</span> added to
-                      the inventory.
+                      <span className="font-semibold text-slate-950">{itemName}</span> added to the
+                      inventory.
                     </p>
                   </div>
                   <button

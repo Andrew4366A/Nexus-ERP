@@ -81,7 +81,7 @@ export function EditInventorySheet({
     defaultValues: {
       name: item.name,
       sku: item.sku,
-      category: item.category as any,
+      category: item.category as (typeof CATEGORIES)[number],
       description: item.description ?? "",
       quantity: item.quantity,
       unitPrice: item.unitPrice,

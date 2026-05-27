@@ -46,9 +46,24 @@ export function StockChart() {
                 <stop offset="100%" stopColor="oklch(0.546 0.215 262.881)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.929 0.013 255.508)" vertical={false} />
-            <XAxis dataKey="month" stroke="oklch(0.554 0.046 257.417)" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="oklch(0.554 0.046 257.417)" fontSize={12} tickLine={false} axisLine={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="oklch(0.929 0.013 255.508)"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="month"
+              stroke="oklch(0.554 0.046 257.417)"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="oklch(0.554 0.046 257.417)"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: "var(--card)",

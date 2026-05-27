@@ -39,10 +39,30 @@ export async function createSalaryDefinition(req, res, next) {
 
 export async function deleteSalaryDefinition(req, res, next) {
   try {
-    const def = await SalaryDefinition.findByIdAndDelete(req.params.id);
+    const id = req.params.id;
+
+    const def = await SalaryDefinition.findByIdAndDelete(id);
     if (!def) {
       return res.status(404).json({ message: "Salary definition not found" });
     }
+
+    if (req.user?.role === "user") {
+      notifyAdmins({
+        type: "payroll.salary_definition_deleted",
+        title: "Salary definition deleted",
+        message: `${req.user.name} deleted ${def.title || "a salary definition"}.`,
+        actor: {
+          id: req.user._id,
+          name: req.user.name,
+          role: req.user.role,
+        },
+        resource: {
+          id: def._id,
+          module: "payroll",
+        },
+      });
+    }
+
     res.json({ message: "Salary definition removed", id: def._id });
   } catch (error) {
     next(error);

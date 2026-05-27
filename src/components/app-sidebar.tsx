@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Package, Wallet, Truck, Settings, Users, ShieldCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  Wallet,
+  Truck,
+  Settings,
+  Users,
+  ShieldCheck,
+} from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
 import {
@@ -36,21 +44,22 @@ const SECTION_ICONS: Record<SidebarSectionId, LucideIcon> = {
 
 export function filterSidebarNavItems(user: ReturnType<typeof useAuth>["user"], isAdmin: boolean) {
   const fullAccess = userHasFullSidebarAccess(user) || isAdmin;
-  const allowedSections = fullAccess ? USER_SIDEBAR_SECTION_ORDER : normalizeUserSections(user ?? undefined);
+  const allowedSections = fullAccess
+    ? USER_SIDEBAR_SECTION_ORDER
+    : normalizeUserSections(user ?? undefined);
 
-  const workspaceItems = USER_SIDEBAR_SECTION_ORDER.filter((id) => allowedSections.includes(id)).map(
-    (id) => ({
-      key: id,
-      title: SECTION_LABEL[id],
-      url: SECTION_PATH[id],
-      icon: SECTION_ICONS[id],
-    }),
-  );
+  const workspaceItems = USER_SIDEBAR_SECTION_ORDER.filter((id) =>
+    allowedSections.includes(id),
+  ).map((id) => ({
+    key: id,
+    title: SECTION_LABEL[id],
+    url: SECTION_PATH[id],
+    icon: SECTION_ICONS[id],
+  }));
 
   const nav = workspaceItems.map(({ title, url, icon }) => ({ title, url, icon }));
 
-  const showUserAccess =
-    fullAccess || hasModulePermission(user, isAdmin, "User Access", "read");
+  const showUserAccess = fullAccess || hasModulePermission(user, isAdmin, "User Access", "read");
 
   if (showUserAccess) {
     nav.push({ title: "User Access", url: ADMIN_ONLY_PATH, icon: ShieldCheck });

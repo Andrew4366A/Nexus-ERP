@@ -80,7 +80,9 @@ export function UsersTable({
               >
                 <TableCell className="pl-4 font-medium">{row.name}</TableCell>
                 <TableCell>{row.username}</TableCell>
-                <TableCell className="max-w-48 truncate text-muted-foreground">{row.email}</TableCell>
+                <TableCell className="max-w-48 truncate text-muted-foreground">
+                  {row.email}
+                </TableCell>
                 <TableCell>
                   <Badge variant={row.role === "admin" ? "default" : "secondary"}>
                     {getAccountRoleLabel(row)}

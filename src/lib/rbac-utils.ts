@@ -5,7 +5,12 @@ import {
   type SidebarSectionId,
 } from "@/lib/sidebar-access";
 import type { AuthUser } from "@/lib/auth";
-import type { CustomRole, LegacyAccountRole, ModulePermission, PopulatedRoleRef } from "@/lib/rbac-types";
+import type {
+  CustomRole,
+  LegacyAccountRole,
+  ModulePermission,
+  PopulatedRoleRef,
+} from "@/lib/rbac-types";
 
 type PermissionActions = Record<ActionType, boolean>;
 type LegacyModulePermission = ModulePermission & Partial<PermissionActions>;
@@ -33,7 +38,9 @@ export function toSectionId(value: string): SidebarSectionId | null {
   return LABEL_TO_SECTION[trimmed] ?? null;
 }
 
-export function sectionsFromRole(role: Pick<CustomRole, "sidebarSections"> | null | undefined): Set<SidebarSectionId> {
+export function sectionsFromRole(
+  role: Pick<CustomRole, "sidebarSections"> | null | undefined,
+): Set<SidebarSectionId> {
   const ids = new Set<SidebarSectionId>();
   if (!role?.sidebarSections?.length) return ids;
   for (const entry of role.sidebarSections) {
@@ -103,9 +110,7 @@ export function hasModulePermission(
   const populated = resolvePopulatedRole(user);
 
   if (populated?.permissions?.length) {
-    const match = populated.permissions.find(
-      (p) => p.module.trim().toLowerCase() === moduleKey,
-    );
+    const match = populated.permissions.find((p) => p.module.trim().toLowerCase() === moduleKey);
     return Boolean(match && getPermissionActions(match)[action]);
   }
 
